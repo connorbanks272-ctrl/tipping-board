@@ -2,19 +2,23 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tipping Board Competition Edition</title>
+<title>WinMore Tipping Board</title>
 <style>
 body {
   margin:0;
-  background:#001d3d;
+  background:#111;
   color:white;
-  font-family:Arial;
+  font-family:Arial, sans-serif;
   text-align:center;
 }
-h1 { margin:10px; }
+h1 {
+  margin:10px;
+  font-size:2em;
+  color:white;
+}
 canvas {
-  background:#0a2540;
-  border:4px solid #00b4d8;
+  background:#222;
+  border:4px solid #e63946;
   border-radius:12px;
   display:block;
   margin:0 auto;
@@ -26,14 +30,16 @@ button {
   font-size:16px;
   border:none;
   border-radius:8px;
-  background:#ff0054;
+  background:#e63946;
   color:white;
+  cursor:pointer;
 }
 </style>
 </head>
 <body>
 
-<h1>🎯 TIPPING BOARD 🎯</h1>
+<img src="22d66e0a-16c4-478a-a62d-4ea0c3826b6a.png" style="width:200px;margin:10px auto;display:block;">
+<h1>🎯 WINMORE TIPPING BOARD 🎯</h1>
 <h3>Score: <span id="score">0</span></h3>
 <p>Pick a side to drop your coin</p>
 <button onclick="dropCoin('left')">⬅️ Left</button>
@@ -54,36 +60,42 @@ let pegs = [];
 let fallingCoin = null;
 let score = 0;
 
-// Prize sections at the bottom
-const sections = [
-  {x: 0, width: 133, points: 10, color: "#ff595e"},
-  {x: 133, width: 134, points: 20, color: "#1982c4"},
-  {x: 267, width: 133, points: 50, color: "#8ac926"}
-];
+// Generate ~20 prize sections
+const sectionCount = 20;
+const sectionWidth = canvas.width / sectionCount;
+const sections = [];
+for (let i=0; i<sectionCount; i++) {
+  sections.push({
+    x: i*sectionWidth,
+    width: sectionWidth,
+    points: Math.floor(Math.random()*50 + 10), // random 10-60 points
+    color: `hsl(${i*18}, 80%, 50%)`
+  });
+}
 
-// Setup pegs in staggered pattern
 function setup() {
   pegs = [];
-  for (let y = 100; y < 500; y += 40) {
-    for (let x = 40; x < 360; x += 40) {
-      pegs.push({x: x + (y % 80 === 0 ? 20 : 0), y});
+  // staggered grid of pegs
+  for (let y = 100; y < 500; y += 30) {
+    for (let x = 20; x < 380; x += 30) {
+      pegs.push({x: x + (y % 60 === 0 ? 15 : 0), y});
     }
   }
   fallingCoin = null;
 }
 
 function drawPegs() {
-  ctx.fillStyle = "#90e0ef";
+  ctx.fillStyle = "#f1faee";
   pegs.forEach(p => {
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
+    ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
     ctx.fill();
   });
 }
 
 function drawFalling() {
   if (!fallingCoin) return;
-  ctx.fillStyle = "#ffd60a";
+  ctx.fillStyle = "#ffcb05";
   ctx.beginPath();
   ctx.arc(fallingCoin.x, fallingCoin.y, 10, 0, Math.PI*2);
   ctx.fill();
@@ -94,8 +106,8 @@ function drawSections() {
     ctx.fillStyle = s.color;
     ctx.fillRect(s.x, 550, s.width, 50);
     ctx.fillStyle = "white";
-    ctx.font = "16px Arial";
-    ctx.fillText(s.points, s.x + s.width/2 - 10, 580);
+    ctx.font = "12px Arial";
+    ctx.fillText(s.points, s.x + s.width/2 - 8, 580);
   });
 }
 
@@ -107,20 +119,20 @@ function update() {
   drawFalling();
 
   if (fallingCoin) {
-    fallingCoin.y += 2; // slower falling
+    fallingCoin.y += 2; // slow fall
 
-    // Bounce off pegs
+    // bounce off pegs
     pegs.forEach(p => {
       const dx = fallingCoin.x - p.x;
       const dy = fallingCoin.y - p.y;
       const dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist < 12) {
-        fallingCoin.x += (Math.random() < 0.5 ? -1 : 1) * Math.random() * 15;
-        fallingCoin.y -= 1; // slight bounce
+      if (dist < 10) {
+        fallingCoin.x += (Math.random() < 0.5 ? -1 : 1) * Math.random() * 12;
+        fallingCoin.y -= 1; // bounce up
       }
     });
 
-    // Check if coin reached bottom
+    // check if coin reached bottom
     if (fallingCoin.y >= 550) {
       sections.forEach(s => {
         if (fallingCoin.x >= s.x && fallingCoin.x <= s.x + s.width) {
@@ -136,13 +148,14 @@ function update() {
   requestAnimationFrame(update);
 }
 
+// Drop coin function with randomness
 function dropCoin(side) {
-  if (fallingCoin) return; // only one coin at a time
+  if (fallingCoin) return;
 
   let x;
-  if (side === 'left') x = 50;
-  else if (side === 'middle') x = 200;
-  else if (side === 'right') x = 350;
+  if (side === 'left') x = 50 + Math.random()*20;
+  else if (side === 'middle') x = 200 + Math.random()*20 - 10;
+  else if (side === 'right') x = 350 + Math.random()*-20;
 
   fallingCoin = {x: x, y: 50};
 }
