@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Tipping Board</title>
+<style>
+body {
+  margin:0;
+  background: radial-gradient(circle at top, #001d3d, #000814);
+  color:white;
+  font-family: Arial;
+  text-align:center;
+}
+h1 { margin:10px; }
+canvas {
+  background:#0a2540;
+  border:4px solid #00b4d8;
+  border-radius:15px;
+  box-shadow:0 0 20px #00b4d8;
+  touch-action:none;
+}
+button {
+  padding:10px 20px;
+  margin:10px;
+  font-size:16px;
+  border:none;
+  border-radius:8px;
+  background:#ff0054;
+  color:white;
+}
+</style>
+</head>
+<body>
+
+<h1>🎯 ULTIMATE TIPPING BOARD 🎯</h1>
+<h3>Score: <span id="score">0</span></h3>
+<button onclick="resetGame()">Reset</button>
+<p>Tap the board to drop counters</p>
+
+<canvas id="game" width="400" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let pegs = [];
+let falling = [];
+let shelfCoins = [];
+let shelfOffset = 0;
+let shelfDir = 1;
+let score = 0;
+
+function init() {
+  pegs = [];
+  for (let y = 100; y < 400; y += 40) {
+    for (let x = 40; x < 360; x += 40) {
+      pegs.push({x: x + (y % 80 === 0 ? 20 : 0), y});
+    }
+  }
+  shelfCoins = [];
+  for (let i = 0; i < 12; i++) {
+    shelfCoins.push({x: 40 + i * 28, y: 500});
+  }
+}
+
+function drawPegs() {
+  ctx.fillStyle = "#90e0ef";
+  pegs.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function drawShelf() {
+  ctx.fillStyle = "#444";
+  ctx.fillRect(0, 520, 400, 20);
+  ctx.save();
+  ctx.translate(shelfOffset, 0);
+  ctx.fillStyle = "#ffd60a";
+  shelfCoins.forEach(c => {
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 10, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+function updateFalling() {
+  falling.forEach(c => {
+    c.y += 4;
+    pegs.forEach(p => {
+      let dx = c.x - p.x;
+      let dy = c.y - p.y;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 10) c.x += (Math.random() - 0.5) * 20;
+    });
+    if (c.y > 480) {
+      shelfCoins.forEach(sc => {
+        if (Math.abs(c.x - (sc.x + shelfOffset)) < 20) sc.x += 15;
+      });
+      c.y = 1000;
+    }
+  });
+  falling = falling.filter(c => c.y < 600);
+}
+
+function updateShelf() {
+  shelfOffset += shelfDir * 0.6;
+  if (shelfOffset > 20 || shelfOffset < -20) shelfDir *= -1;
+  shelfCoins.forEach(sc => {
+    if (sc.x + shelfOffset > 390) {
+      score++;
+      document.getElementById("score").innerText = score;
+      sc.x = -100;
+    }
+  });
+  shelfCoins = shelfCoins.filter(sc => sc.x > -50);
+}
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawPegs();
+  updateFalling();
+  updateShelf();
+  drawShelf();
+  requestAnimationFrame(draw);
+}
+
+function resetGame() {
+  score = 0;
+  document.getElementById("score").innerText = score;
+  init();
+}
+
+canvas.addEventListener("click", e => {
+  const rect = canvas.getBoundingClientRect();
+  falling.push({x: e.clientX - rect.left, y: 50});
+});
+
+canvas.addEventListener("touchstart", e => {
+  const rect = canvas.getBoundingClientRect();
+  falling.push({x: e.touches[0].clientX - rect.left, y: 50});
+});
+
+init();
+draw();
+</script>
+
+</body>
+</html>
