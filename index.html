@@ -60,25 +60,26 @@ let pegs = [];
 let fallingCoin = null;
 let score = 0;
 
-// Generate ~20 prize sections
-const sectionCount = 20;
+// 10 prize sections
+const sectionCount = 10;
 const sectionWidth = canvas.width / sectionCount;
 const sections = [];
-for (let i=0; i<sectionCount; i++) {
+for (let i = 0; i < sectionCount; i++) {
   sections.push({
-    x: i*sectionWidth,
+    x: i * sectionWidth,
     width: sectionWidth,
-    points: Math.floor(Math.random()*50 + 10), // random 10-60 points
-    color: `hsl(${i*18}, 80%, 50%)`
+    points: (i + 1) * 10, // points 10, 20, ... 100
+    color: "#8ac926"      // uniform color
   });
 }
 
+// Setup staggered pegs
 function setup() {
   pegs = [];
-  // staggered grid of pegs
-  for (let y = 100; y < 500; y += 30) {
-    for (let x = 20; x < 380; x += 30) {
-      pegs.push({x: x + (y % 60 === 0 ? 15 : 0), y});
+  for (let y = 100; y < 500; y += 35) {
+    for (let x = 25; x < 375; x += 35) {
+      // stagger every other row
+      pegs.push({x: x + (y % 70 === 0 ? 15 : 0), y});
     }
   }
   fallingCoin = null;
@@ -112,14 +113,14 @@ function drawSections() {
 }
 
 function update() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   drawPegs();
   drawSections();
   drawFalling();
 
   if (fallingCoin) {
-    fallingCoin.y += 2; // slow fall
+    fallingCoin.y += 2; // slower fall
 
     // bounce off pegs
     pegs.forEach(p => {
@@ -141,14 +142,14 @@ function update() {
           document.getElementById("score").innerText = score;
         }
       });
-      fallingCoin = null; // remove coin
+      fallingCoin = null;
     }
   }
 
   requestAnimationFrame(update);
 }
 
-// Drop coin function with randomness
+// drop coin
 function dropCoin(side) {
   if (fallingCoin) return;
 
