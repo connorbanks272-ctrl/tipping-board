@@ -77,9 +77,11 @@ for (let i = 0; i < sectionCount; i++) {
 function setup() {
   pegs = [];
   for (let y = 100; y < 500; y += 35) {
+    const isEvenRow = Math.floor((y - 100) / 35) % 2 === 0;
     for (let x = 25; x < 375; x += 35) {
-      // stagger every other row
-      pegs.push({x: x + (y % 70 === 0 ? 15 : 0), y});
+      // Offset every other row
+      const offsetX = isEvenRow ? 0 : 17.5; // half of the spacing for stagger
+      pegs.push({x: x + offsetX, y});
     }
   }
   fallingCoin = null;
