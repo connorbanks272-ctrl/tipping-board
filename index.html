@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tipping Board TV Edition</title>
+<title>Tipping Board Competition Edition</title>
 <style>
 body {
   margin:0;
@@ -22,7 +22,7 @@ canvas {
 }
 button {
   padding:10px 20px;
-  margin:10px;
+  margin:5px;
   font-size:16px;
   border:none;
   border-radius:8px;
@@ -35,8 +35,11 @@ button {
 
 <h1>🎯 TIPPING BOARD 🎯</h1>
 <h3>Score: <span id="score">0</span></h3>
+<p>Pick a side to drop your coin</p>
+<button onclick="dropCoin('left')">⬅️ Left</button>
+<button onclick="dropCoin('middle')">⬇️ Middle</button>
+<button onclick="dropCoin('right')">➡️ Right</button>
 <button onclick="resetGame()">Reset</button>
-<p>Tap anywhere on the board</p>
 
 <canvas id="game"></canvas>
 
@@ -48,22 +51,25 @@ canvas.width = 400;
 canvas.height = 600;
 
 let pegs = [];
-let coins = [];
-let falling = [];
+let fallingCoin = null;
 let score = 0;
 
+// Prize sections at the bottom
+const sections = [
+  {x: 0, width: 133, points: 10, color: "#ff595e"},
+  {x: 133, width: 134, points: 20, color: "#1982c4"},
+  {x: 267, width: 133, points: 50, color: "#8ac926"}
+];
+
+// Setup pegs in staggered pattern
 function setup() {
   pegs = [];
-  for (let y = 100; y < 400; y += 40) {
+  for (let y = 100; y < 500; y += 40) {
     for (let x = 40; x < 360; x += 40) {
       pegs.push({x: x + (y % 80 === 0 ? 20 : 0), y});
     }
   }
-
-  coins = [];
-  for (let i = 0; i < 12; i++) {
-    coins.push({x: 40 + i * 28, y: 520});
-  }
+  fallingCoin = null;
 }
 
 function drawPegs() {
@@ -75,21 +81,21 @@ function drawPegs() {
   });
 }
 
-function drawCoins() {
+function drawFalling() {
+  if (!fallingCoin) return;
   ctx.fillStyle = "#ffd60a";
-  coins.forEach(c => {
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, 10, 0, Math.PI*2);
-    ctx.fill();
-  });
+  ctx.beginPath();
+  ctx.arc(fallingCoin.x, fallingCoin.y, 10, 0, Math.PI*2);
+  ctx.fill();
 }
 
-function drawFalling() {
-  ctx.fillStyle = "#ff8500";
-  falling.forEach(c => {
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, 8, 0, Math.PI*2);
-    ctx.fill();
+function drawSections() {
+  sections.forEach(s => {
+    ctx.fillStyle = s.color;
+    ctx.fillRect(s.x, 550, s.width, 50);
+    ctx.fillStyle = "white";
+    ctx.font = "16px Arial";
+    ctx.fillText(s.points, s.x + s.width/2 - 10, 580);
   });
 }
 
@@ -97,43 +103,48 @@ function update() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   drawPegs();
-  drawCoins();
+  drawSections();
+  drawFalling();
 
-  falling.forEach(c => {
-    c.y += 4;
+  if (fallingCoin) {
+    fallingCoin.y += 2; // slower falling
 
+    // Bounce off pegs
     pegs.forEach(p => {
-      let dx = c.x - p.x;
-      let dy = c.y - p.y;
-      if (Math.sqrt(dx*dx + dy*dy) < 10) {
-        c.x += (Math.random() - 0.5) * 20;
+      const dx = fallingCoin.x - p.x;
+      const dy = fallingCoin.y - p.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 12) {
+        fallingCoin.x += (Math.random() < 0.5 ? -1 : 1) * Math.random() * 15;
+        fallingCoin.y -= 1; // slight bounce
       }
     });
 
-    if (c.y > 500) {
-      coins.forEach(coin => {
-        if (Math.abs(c.x - coin.x) < 20) {
-          coin.x += 15;
+    // Check if coin reached bottom
+    if (fallingCoin.y >= 550) {
+      sections.forEach(s => {
+        if (fallingCoin.x >= s.x && fallingCoin.x <= s.x + s.width) {
+          score += s.points;
+          alert(`You won ${s.points} points!`);
+          document.getElementById("score").innerText = score;
         }
       });
-      c.y = 1000;
+      fallingCoin = null; // remove coin
     }
-  });
-
-  coins.forEach(coin => {
-    if (coin.x > 390) {
-      score++;
-      document.getElementById("score").innerText = score;
-      coin.x = -100;
-    }
-  });
-
-  falling = falling.filter(c => c.y < 600);
-  coins = coins.filter(c => c.x > -50);
-
-  drawFalling();
+  }
 
   requestAnimationFrame(update);
+}
+
+function dropCoin(side) {
+  if (fallingCoin) return; // only one coin at a time
+
+  let x;
+  if (side === 'left') x = 50;
+  else if (side === 'middle') x = 200;
+  else if (side === 'right') x = 350;
+
+  fallingCoin = {x: x, y: 50};
 }
 
 function resetGame() {
@@ -141,18 +152,6 @@ function resetGame() {
   document.getElementById("score").innerText = score;
   setup();
 }
-
-canvas.addEventListener("touchstart", function(e){
-  const rect = canvas.getBoundingClientRect();
-  const x = e.touches[0].clientX - rect.left;
-  falling.push({x:x, y:50});
-});
-
-canvas.addEventListener("click", function(e){
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  falling.push({x:x, y:50});
-});
 
 setup();
 update();
